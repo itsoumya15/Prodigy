@@ -1,0 +1,152 @@
+#FOOD CLASSIFICATION
+import os
+for root, dirs, files in os.walk("/content"):
+    print(root)
+
+import zipfile
+zip_path = '/content/food_c101_n10099_r32x32x3.h5.zip'
+
+with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    zip_ref.extractall('/content/food101_data')  # choose a folder to unzip into
+print("ZIP extracted successfully")
+
+import os
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+# Correct dataset folder
+base_path = '/content/popular_street_foods/dataset'
+
+# Data generators
+datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2)
+
+train_gen = datagen.flow_from_directory(
+    base_path,
+    target_size=(128, 128),
+    batch_size=32,
+    class_mode='categorical',
+    subset='training'
+)
+
+val_gen = datagen.flow_from_directory(
+    base_path,
+    target_size=(128, 128),
+    batch_size=32,
+    class_mode='categorical',
+    subset='validation'
+)
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+
+model = Sequential([
+    Conv2D(32, (3, 3), activation='relu', input_shape=(128, 128, 3)),
+    MaxPooling2D(2, 2),
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPooling2D(2, 2),
+    Flatten(),
+    Dense(128, activation='relu'),
+    Dense(train_gen.num_classes, activation='softmax')
+])
+
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.summary()
+
+history = model.fit(train_gen, validation_data=val_gen, epochs=10)
+
+import os
+
+# Get a real image path from pizza_slice folder
+pizza_path = "/content/popular_street_foods/dataset/pizza_slice"
+images = os.listdir(pizza_path)
+print(images[:5])  # See first few images
+
+img_path = os.path.join(pizza_path, images[0])
+print("Using image:", img_path)
+
+import os
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing import image
+
+#Path to dataset
+dataset_path = '/content/popular_street_foods/dataset'
+class_names = sorted(os.listdir(dataset_path))
+
+#Estimated calorie values
+calorie_map = {
+    'pizza_slice': 285, 'burger': 354, 'samosas': 132, 'pani_puri': 40,
+    'shawarma': 500, 'hot_dog': 290, 'crepes': 170, 'pad_thai': 350,
+    'churros': 116, 'falafel': 333, 'tacos': 226, 'kebab_(shish_kebab)': 200,
+    'empanadas': 250, 'pretzel': 389, 'arepas': 290, 'poutine': 740,
+    'bánh_mì': 400, 'currywurst': 300, 'gelato': 220, 'fish_and_chips': 600
+}
+
+#Select 8 random images (1 per food class ideally)
+samples = []
+for _ in range(8):
+    food_class = random.choice(class_names)
+    class_path = os.path.join(dataset_path, food_class)
+    img_name = random.choice(os.listdir(class_path))
+    img_path = os.path.join(class_path, img_name)
+    samples.append((img_path, food_class))
+
+# 🖼️ Predict and plot
+img_size = (128, 128)
+plt.figure(figsize=(16, 8))
+
+for i, (img_path, _) in enumerate(samples):
+    img = image.load_img(img_path, target_size=img_size)
+    x = image.img_to_array(img) / 255.0
+    x = np.expand_dims(x, axis=0)
+
+    preds = model.predict(x)
+    pred_class = class_names[np.argmax(preds)]
+    calories = calorie_map.get(pred_class, "Unknown")
+
+    # 📊 Plot
+    plt.subplot(2, 4, i + 1)
+    plt.imshow(img)
+    plt.axis('off')
+    plt.title(f"Food: {pred_class}\nCalories: {calories} cal", fontsize=11)
+
+plt.tight_layout()
+plt.show()
+
+import seaborn as sns
+import pandas as pd
+
+#  Step 6: Prepare data for graph
+food_items = []
+calories_list = []
+recommendations = []
+
+for _, food_name in selected_images:
+    cal = calorie_info.get(food_name, "Unknown")
+    rec = get_diet_recommendation(cal if isinstance(cal, int) else 0)
+
+    food_items.append(food_name.replace('_', ' ').title())
+    calories_list.append(cal)
+    recommendations.append(rec)
+
+# Create DataFrame
+df = pd.DataFrame({
+    'Food': food_items,
+    'Calories': calories_list,
+    'Recommendation': recommendations
+})
+
+#  Step 7: Plot
+plt.figure(figsize=(12, 6))
+sns.barplot(data=df, x='Food', y='Calories', hue='Recommendation', palette={
+    'Healthy': 'green',
+    'Moderate': 'orange',
+    'Avoid': 'red'
+})
+plt.xticks(rotation=45, ha='right')
+plt.title("Calorie & Diet Recommendation Chart")
+plt.ylabel("Calories")
+plt.xlabel("Food Item")
+plt.tight_layout()
+plt.show()
+
