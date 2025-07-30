@@ -91,7 +91,7 @@ for _ in range(8):
     img_path = os.path.join(class_path, img_name)
     samples.append((img_path, food_class))
 
-# 🖼️ Predict and plot
+# Predict and plot
 img_size = (128, 128)
 plt.figure(figsize=(16, 8))
 
@@ -104,7 +104,7 @@ for i, (img_path, _) in enumerate(samples):
     pred_class = class_names[np.argmax(preds)]
     calories = calorie_map.get(pred_class, "Unknown")
 
-    # 📊 Plot
+    # Plot
     plt.subplot(2, 4, i + 1)
     plt.imshow(img)
     plt.axis('off')
